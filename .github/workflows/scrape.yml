@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}
-      - run: pip install httpx
+      - run: pip install httpx beautifulsoup4 requests
       - run: python ci/preflight.py --concurrency 50
       - id: count
         run: echo "changed=$(python3 -c "import json; print(len(json.load(open('ci/changed_ccns.json'))['changed']))")" >> "$GITHUB_OUTPUT"
@@ -93,6 +93,6 @@ jobs:
           cp ci/fingerprints.new.json dim/fingerprints.json
           git config user.name "actions-ci"
           git config user.email "bot@johnnygod.dev"
-          git add dim/fingerprints.json
-          git commit -m "preflight baseline refresh ($(date -u +%F))" || echo "no change"
+          git add dim/fingerprints.json dim/urls/
+          git commit -m "preflight baseline + URL repairs ($(date -u +%F))" || echo "no change"
           git push
