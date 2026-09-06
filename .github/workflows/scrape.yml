@@ -1,0 +1,31 @@
+name: hospital-scrape
+on:
+  schedule: [{cron: "0 6 * * *"}]
+  workflow_dispatch:
+    inputs:
+      total:
+        description: "shard count"
+        default: "10"
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          curl -L https://github.com/dolthub/dolt/releases/latest/download/dolt-linux-amd64.tar.gz | sudo tar -xz -C /usr/local/bin --strip-components=1 dolt-linux-amd64/dolt
+          dolt version
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install ijson requests click openpyxl pandas httpx
+      - name: Full chain — scrape, convert, import, push, PR
+        env:
+          SHARD: ${{ matrix.shard }}
+          TOTAL: ${{ github.event.inputs.total || '10' }}
+          DOLT_CREDS_JWK: ${{ secrets.DOLT_CREDS_JWK }}
+          DOLTHUB_TOKEN: ${{ secrets.DOLTHUB_TOKEN }}
+        run: bash ci/pipeline.sh
