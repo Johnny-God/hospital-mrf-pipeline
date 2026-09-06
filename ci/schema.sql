@@ -1,4 +1,4 @@
-CREATE TABLE `rate` (
+CREATE TABLE IF NOT EXISTS `rate` (
   `id` bigint NOT NULL,
   `ccn` varchar(10) NOT NULL,
   `code` varchar(64),
@@ -22,7 +22,7 @@ CREATE TABLE `rate` (
   KEY `idx_rate_ccn` (`ccn`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_bin;
 
-CREATE TABLE `hospital` (
+CREATE TABLE IF NOT EXISTS `hospital` (
   `ccn` varchar(10) NOT NULL,
   `hospital_name` varchar(255),
   `state` char(2),
