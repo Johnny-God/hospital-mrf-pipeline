@@ -12,8 +12,8 @@ REPO="$(pwd)"
 echo "=== 0. dolt install check + creds ==="
 dolt version
 mkdir -p ~/.dolt/creds
-echo "$DOLT_CREDS_JWK" > ~/.dolt/creds/ci.jwk
-dolt config --global --add user.creds ci.jwk
+printf '%s' "$DOLT_CREDS_JWK" > ~/.dolt/creds/ci.jwk
+dolt config --global --add user.creds ci
 dolt config --global --add user.email "bot@johnnygod.dev"
 dolt config --global --add user.name "actions-ci"
 dolt creds check
