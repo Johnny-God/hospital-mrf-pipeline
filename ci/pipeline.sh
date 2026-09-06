@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
-# One runner = one shard = one full chain: scrape -> convert -> dolt import -> push -> PR -> merge.
-# Branches only insert disjoint rows (md5(ccn)%total sharding) with deterministic ids, so merges never conflict.
+# One runner = one shard = one full chain: scrape -> convert -> dolt import -> push -> PR+merge.
+# MUST clone (not dolt init): DoltHub PRs require shared history with main.
+# Shared history comes from the "seed" commit (schema-only, pushed 2026-09-06);
+# deterministic ids (ccn*1e9+n) keep shard merges conflict-free.
 set -euo pipefail
 
 SHARD="${SHARD:?}"
-TOTAL="${TOTAL:-10}"
+TOTAL="${TOTAL:-50}"
 DB="johnnygod/hospital-prices"
 BRANCH="ci/shard-${SHARD}-$(date +%Y%m%d-%H%M%S)"
 REPO="$(pwd)"
@@ -31,17 +33,17 @@ python ci/gen_hospital_csv.py data-v2/*.jsonl
 CSV=/tmp/dolt-import/rate_v2.csv
 wc -l "$CSV" ci/hospital.csv
 
-echo "=== 3. fresh local dolt repo + import ==="
-mkdir -p /tmp/doltrepo && cd /tmp/doltrepo
-dolt init
-dolt sql < "$REPO/ci/schema.sql"
-dolt table import -c hospital "$REPO/ci/hospital.csv"
+echo "=== 3. clone DoltHub repo + import ==="
+cd /tmp
+dolt clone "https://doltremoteapi.dolthub.com/$DB" work
+cd work
+dolt sql < "$REPO/ci/schema.sql"  # no-op safety: tables exist on the seed line
+dolt table import -a --columns "ccn,hospital_name,state,file_url,transparency_page" hospital "$REPO/ci/hospital.csv"
 dolt table import -a --columns "id,ccn,code,code_prefix,code_orig,modifier,ndc,apc,rev_code,internal_code,billing_class,patient_class,payer_orig,plan_orig,payer_category,standard_charge,rate_percent,drug_unit,drug_quantity" rate "$CSV"
 dolt add -A
 dolt commit -m "shard $SHARD/$TOTAL: $ok hospitals"
 
 echo "=== 4. push branch + PR + merge ==="
-dolt remote add origin "https://doltremoteapi.dolthub.com/$DB"
 dolt push origin "main:$BRANCH"
 python "$REPO/ci/open_pr.py" "$BRANCH" "$SHARD"
 

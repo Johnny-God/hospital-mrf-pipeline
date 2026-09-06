@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Merge any open DoltHub PRs for the hospital-prices DB (API v2), then poll."""
+"""Merge any open DoltHub PRs on hospital-prices (v1alpha1 API; same quirks as open_pr.py)."""
 import json
 import os
 import time
@@ -7,38 +7,42 @@ import urllib.request
 
 DB = "johnnygod/hospital-prices"
 TOKEN = os.environ["DOLTHUB_TOKEN"]
+BASE = f"https://www.dolthub.com/api/v1alpha1/{DB}"
 
 
 def api(path: str, body: dict | None = None, method: str = "GET"):
     req = urllib.request.Request(
-        f"https://www.dolthub.com/api/v2/databases/{DB}/{path}",
-        data=json.dumps(body).encode() if body else None,
+        f"{BASE}/{path}",
+        data=json.dumps(body).encode() if body is not None else None,
         headers={"authorization": f"token {TOKEN}", "content-type": "application/json"},
-        method=method if body else "GET",
+        method="POST" if body is not None else "GET",
     )
     with urllib.request.urlopen(req) as r:
         return json.load(r)
 
 
 pulls = api("pulls")
-data = pulls.get("data", pulls)
-items = data if isinstance(data, list) else data.get("pulls", data.get("items", []))
+if pulls.get("status") != "Success":
+    print("LIST FAILED:", json.dumps(pulls)[:300])
+    raise SystemExit(1)
+items = pulls.get("pulls") or pulls.get("data") or []
 print(f"open pulls: {len(items)}")
 
 for p in items:
-    num = p.get("pull_number") or p.get("number")
-    print(f"merging PR {num} ({p.get('title', '')})")
-    op = api(f"pulls/{num}/merge", {}, method="POST")
-    ref = (op.get("data") or {}).get("operationRef") or op.get("operationName") or ""
-    oid = ref.rstrip("/").split("/")[-1]
-    for _ in range(60):
-        time.sleep(10)
-        st = api(f"operations/{oid}") if oid else op
-        s = st.get("data", st)
-        status = s.get("status")
-        print(" ", status)
-        if status == "succeeded":
+    num = p.get("pull_id") or p.get("number")
+    print(f"merging PR {num} ({p.get('title', p.get('title_description', ''))})")
+    op = api(f"pulls/{num}/merge", method="POST")
+    operation = op.get("operation_name")
+    if not operation:
+        print("  no operation returned:", json.dumps(op)[:300])
+        continue
+    for i in range(120):
+        time.sleep(20)
+        st = api(f"pulls/{num}/merge?operationName={operation}")
+        s = st.get("job_status")
+        if s == "Completed":
+            print("  COMPLETED")
             break
-        if status == "failed":
-            print("  MERGE FAILED:", json.dumps(s)[:300])
+        if s and s.lower() == "failed":
+            print("  FAILED:", json.dumps(st)[:300])
             break
