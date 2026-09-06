@@ -27,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          curl -L https://github.com/dolthub/dolt/releases/latest/download/dolt-linux-amd64.tar.gz | sudo tar -xz -C /usr/local/bin --strip-components=1 dolt-linux-amd64/dolt
+          curl -L https://github.com/dolthub/dolt/releases/latest/download/dolt-linux-amd64.tar.gz | sudo tar -xz -C /usr/local/bin --strip-components=2 dolt-linux-amd64/bin/dolt
           dolt version
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}
