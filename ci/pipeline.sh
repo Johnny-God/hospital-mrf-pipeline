@@ -41,7 +41,7 @@ dolt add -A
 dolt commit -m "shard $SHARD/$TOTAL: $ok hospitals"
 
 echo "=== 4. push branch + PR + merge ==="
-dolt remote add origin "doltremoteapi://$DB"
+dolt remote add origin "https://doltremoteapi.dolthub.com/$DB"
 dolt push origin "main:$BRANCH"
 python "$REPO/ci/open_pr.py" "$BRANCH" "$SHARD"
 

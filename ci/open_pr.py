@@ -23,6 +23,10 @@ def api(path: str, body: dict | None = None):
 branch = sys.argv[1]
 shard = sys.argv[2]
 
+if not TOKEN:
+    print("DOLTHUB_TOKEN not set — branch pushed, PR/merge SKIPPED. Set the secret to enable auto-merge.")
+    sys.exit(0)
+
 # PR source = branch on the same database
 pr = api("pulls", {
     "title": f"shard {shard} — {branch}",

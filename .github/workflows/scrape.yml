@@ -5,14 +5,24 @@ on:
     inputs:
       total:
         description: "shard count"
-        default: "10"
+        default: "50"
 
 jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      shards: ${{ steps.gen.outputs.shards }}
+    steps:
+      - id: gen
+        run: echo "shards=$(python3 -c "print(list(range(int('${{ github.event.inputs.total || 50 }}'))))")" >> "$GITHUB_OUTPUT"
+
   scrape:
+    needs: matrix
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        shard: ${{ fromJson(needs.matrix.outputs.shards) }}
+      max-parallel: 20
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -25,7 +35,7 @@ jobs:
       - name: Full chain — scrape, convert, import, push, PR
         env:
           SHARD: ${{ matrix.shard }}
-          TOTAL: ${{ github.event.inputs.total || '10' }}
+          TOTAL: ${{ github.event.inputs.total || '50' }}
           DOLT_CREDS_JWK: ${{ secrets.DOLT_CREDS_JWK }}
           DOLTHUB_TOKEN: ${{ secrets.DOLTHUB_TOKEN }}
         run: bash ci/pipeline.sh
