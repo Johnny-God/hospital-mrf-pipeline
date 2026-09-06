@@ -3,21 +3,58 @@ on:
   schedule: [{cron: "0 6 * * *"}]
   workflow_dispatch:
     inputs:
+      full:
+        description: "full sweep (skip preflight filter)"
+        default: "false"
       total:
-        description: "shard count"
-        default: "50"
+        description: "shard count override (empty = auto)"
+
+permissions:
+  contents: write
 
 jobs:
+  preflight:
+    # Full-sweep dispatch skips it; scheduled runs always preflight.
+    if: github.event_name == 'schedule' || github.event.inputs.full != 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.count.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install httpx
+      - run: python ci/preflight.py --concurrency 50
+      - id: count
+        run: echo "changed=$(python3 -c "import json; print(len(json.load(open('ci/changed_ccns.json'))['changed']))")" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: preflight
+          path: |
+            ci/changed_ccns.json
+            ci/fingerprints.new.json
+
   matrix:
+    needs: preflight
+    if: always() && !cancelled() && (needs.preflight.result == 'skipped' || needs.preflight.outputs.changed != '0')
     runs-on: ubuntu-latest
     outputs:
       shards: ${{ steps.gen.outputs.shards }}
+      total: ${{ steps.gen.outputs.total }}
     steps:
       - id: gen
-        run: echo "shards=$(python3 -c "print(list(range(int('${{ github.event.inputs.total || 50 }}'))))")" >> "$GITHUB_OUTPUT"
+        run: |
+          if [ "${{ needs.preflight.result }}" = "skipped" ]; then
+            N="${{ github.event.inputs.total || 50 }}"
+          else
+            N=$(python3 -c "import math; c=${{ needs.preflight.outputs.changed }}; print(max(1, min(50, math.ceil(c/100))))")
+          fi
+          echo "total=$N" >> "$GITHUB_OUTPUT"
+          echo "shards=$(python3 -c "print(list(range($N)))")" >> "$GITHUB_OUTPUT"
 
   scrape:
-    needs: matrix
+    needs: [matrix, preflight]
+    if: always() && !cancelled() && needs.matrix.result == 'success'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -32,10 +69,30 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}
       - run: pip install ijson requests click openpyxl pandas httpx
-      - name: Full chain — scrape, convert, import, push, PR
+      - uses: actions/download-artifact@v4
+        if: needs.preflight.result == 'success'
+        with: {name: preflight, path: ci}
+      - name: Full chain — scrape, convert, import, push, PR+merge
         env:
           SHARD: ${{ matrix.shard }}
-          TOTAL: ${{ github.event.inputs.total || '50' }}
+          TOTAL: ${{ needs.matrix.outputs.total }}
           DOLT_CREDS_JWK: ${{ secrets.DOLT_CREDS_JWK }}
           DOLTHUB_TOKEN: ${{ secrets.DOLTHUB_TOKEN }}
         run: bash ci/pipeline.sh
+
+  baseline:
+    # Commit the fresh fingerprint baseline so tomorrow's preflight diffs against it.
+    needs: [preflight, scrape]
+    if: always() && needs.preflight.result == 'success' && !contains(needs.scrape.result, 'failure')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: {name: preflight, path: ci}
+      - run: |
+          cp ci/fingerprints.new.json dim/fingerprints.json
+          git config user.name "actions-ci"
+          git config user.email "bot@johnnygod.dev"
+          git add dim/fingerprints.json
+          git commit -m "preflight baseline refresh ($(date -u +%F))" || echo "no change"
+          git push

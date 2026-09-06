@@ -28,13 +28,19 @@ UA = {"User-Agent": "Mozilla/5.0"}
 SEMAPARSE = None  # parser-thread gate, set in main
 
 
-def load_all():
+def load_all(changed_path: Path | None = None):
     seen, out = set(), []
+    changed = None
+    if changed_path and changed_path.exists():
+        changed = set(json.load(open(changed_path)).get("changed", []))
+        print(f"preflight filter: {len(changed)} CCNs marked for scrape", flush=True)
     for f in sorted(ROOT.glob("dim/urls/*.json")):
         for e in json.load(open(f)):
             ccn, url = e.get("ccn"), (e.get("file_url") or "").strip()
             if not ccn or ccn in seen or not url:
                 continue
+            if changed is not None and ccn not in changed:
+                continue  # preflight proved unchanged — skip entirely
             seen.add(ccn)
             out.append({"ccn": ccn, "url": url})
     return out
@@ -100,7 +106,7 @@ async def amain(shard: int, total: int, concurrency: int):
     OUT.mkdir(exist_ok=True)
     global SEMAPARSE
     SEMAPARSE = asyncio.Semaphore(4)  # max concurrent parses (RAM gate)
-    jobs = [h for h in load_all() if mine(h["ccn"], shard, total)]
+    jobs = [h for h in load_all(ROOT / "ci" / "changed_ccns.json") if mine(h["ccn"], shard, total)]
     pending = [j for j in jobs if not (OUT / f"{j['ccn']}.jsonl").exists()
                or (OUT / f"{j['ccn']}.jsonl").stat().st_size == 0]
     print(f"shard {shard}/{total}: {len(jobs)} mine, {len(pending)} pending, "
