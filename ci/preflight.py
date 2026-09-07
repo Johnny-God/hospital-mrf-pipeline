@@ -245,6 +245,33 @@ async def main(concurrency: int):
 
     OUT_CHANGED.write_text(json.dumps({"changed": changed, "dead_recent": dead}))
     OUT_NEW.write_text(json.dumps(new_baseline, indent=1))
+
+    # Shared work queue = ground truth merged: everything not yet in DoltHub main
+    # that this run's preflight says needs scraping. Done hospitals drop out;
+    # everything else (re)enters as pending. Claimed/failed state from a previous
+    # queue is preserved where the CCN still needs work.
+    old_queue = {}
+    qpath = ROOT / "ci" / "queue.json"
+    if qpath.exists():
+        old_queue = {e["ccn"]: e for e in json.load(open(qpath))}
+    queue = []
+    in_dolt = get_done_set()
+    for h in hospitals:
+        ccn = h["ccn"]
+        if ccn in in_dolt and ccn not in changed:
+            continue  # done and file unchanged
+        o = old_queue.get(ccn, {})
+        queue.append({
+            "ccn": ccn,
+            "status": "pending" if o.get("status") != "claimed" else "claimed",
+            "claimed_by": o.get("claimed_by", ""),
+            "ts": o.get("ts") or datetime.now(timezone.utc).isoformat(),
+            "attempts": o.get("attempts", 0),
+        })
+    qpath.write_text(json.dumps(queue, indent=1))
+    print(f"QUEUE_REBUILT: {len(queue)} work items "
+          f"({sum(1 for e in queue if e['status'] == 'pending')} pending)")
+
     print(f"PREFLIGHT_DONE: {len(changed)} to scrape, {len(dead)} dead-recent, "
           f"{len(new_baseline)} fingerprinted, {time.time() - t0:.0f}s")
 
