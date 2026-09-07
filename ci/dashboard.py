@@ -20,7 +20,7 @@ from pathlib import Path
 REPO = Path(__file__).parent.parent
 QUEUE = REPO / "ci" / "queue.json"
 HIST = REPO / "ci" / "queue_history.jsonl"
-OUT = REPO / "ci" / "dashboard.html"
+OUT = REPO / "dashboard.html"
 
 
 def parse_ts(s: str) -> datetime:
