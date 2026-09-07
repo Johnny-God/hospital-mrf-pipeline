@@ -25,7 +25,7 @@ def api(path: str, body: dict | None = None, method: str = "GET"):
         f"{BASE}/{path}",
         data=json.dumps(body).encode() if body is not None else None,
         headers={"authorization": f"token {TOKEN}", "content-type": "application/json"},
-        method="POST" if body is not None else "GET",
+        method=method,
     )
     with urllib.request.urlopen(req) as r:
         return json.load(r)
