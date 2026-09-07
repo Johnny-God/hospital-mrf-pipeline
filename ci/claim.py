@@ -35,7 +35,9 @@ def sh(*args, check=True):
 
 
 def sync():
-    """Pull --rebase, tolerating a dirty tree (artifact files) via stash/pop."""
+    """Pull --rebase, tolerating a dirty tree (artifact files) via stash/pop.
+    If the local queue.json is corrupt or missing after the pull (rebase race
+    with 20 concurrent claimers), restore it from origin/main."""
     dirty = subprocess.run(["git", "status", "--porcelain"], cwd=REPO,
                            capture_output=True, text=True).stdout.strip()
     if dirty:
@@ -46,6 +48,20 @@ def sync():
         p = sh("git", "pull", "--rebase", "-q", "origin", "main", check=False)
     if p.returncode != 0:
         raise RuntimeError(f"git pull --rebase failed: {p.stderr[:200]}")
+    if not _queue_valid():
+        # checkout origin's copy wholesale — local version lost the race
+        subprocess.run(["git", "checkout", "origin/main", "--", "ci/queue.json"],
+                       cwd=REPO, capture_output=True)
+        if not _queue_valid():
+            raise RuntimeError("queue.json corrupt on origin too — skipping cycle")
+
+
+def _queue_valid() -> bool:
+    try:
+        json.load(open(QUEUE))
+        return True
+    except Exception:
+        return False
 
 
 def _commit(msg: str) -> bool:
