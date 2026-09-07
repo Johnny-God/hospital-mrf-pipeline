@@ -25,6 +25,7 @@ jobs:
         with: {python-version: "3.12"}
       - run: pip install httpx beautifulsoup4 requests
       - run: python ci/preflight.py --concurrency 50
+      - run: python ci/merge_orphans.py   # bank branches left by dead runners
       - id: count
         run: echo "changed=$(python3 -c "import json; print(len(json.load(open('ci/changed_ccns.json'))['changed']))")" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
