@@ -65,29 +65,29 @@
  {
   "ccn": "1000",
   "status": "claimed",
-  "claimed_by": "testrunner",
-  "ts": "2026-09-07T17:51:22.412957+00:00",
-  "attempts": 2
+  "claimed_by": "identtest",
+  "ts": "2026-09-07T19:52:47.348214+00:00",
+  "attempts": 3
  },
  {
   "ccn": "0000",
   "status": "claimed",
-  "claimed_by": "testrunner",
-  "ts": "2026-09-07T17:51:22.412957+00:00",
-  "attempts": 1
+  "claimed_by": "identtest",
+  "ts": "2026-09-07T19:52:47.348214+00:00",
+  "attempts": 2
  },
  {
   "ccn": "0001",
   "status": "claimed",
-  "claimed_by": "testrunner",
-  "ts": "2026-09-07T17:51:22.412957+00:00",
-  "attempts": 1
+  "claimed_by": "identtest",
+  "ts": "2026-09-07T19:52:47.348214+00:00",
+  "attempts": 2
  },
  {
   "ccn": "0002",
   "status": "claimed",
-  "claimed_by": "testrunner",
-  "ts": "2026-09-07T17:51:22.412957+00:00",
-  "attempts": 1
+  "claimed_by": "identtest",
+  "ts": "2026-09-07T19:52:47.348214+00:00",
+  "attempts": 2
  }
 ]
