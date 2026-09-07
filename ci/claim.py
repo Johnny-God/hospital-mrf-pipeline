@@ -31,7 +31,17 @@ def sh(*args, check=True):
 
 
 def sync():
-    sh("git", "pull", "--rebase", "-q", "origin", "main")
+    """Pull --rebase, tolerating a dirty tree (artifact files) via stash/pop."""
+    dirty = subprocess.run(["git", "status", "--porcelain"], cwd=REPO,
+                           capture_output=True, text=True).stdout.strip()
+    if dirty:
+        subprocess.run(["git", "stash", "-q"], cwd=REPO, capture_output=True)
+        p = sh("git", "pull", "--rebase", "-q", "origin", "main", check=False)
+        subprocess.run(["git", "stash", "pop", "-q"], cwd=REPO, capture_output=True)
+    else:
+        p = sh("git", "pull", "--rebase", "-q", "origin", "main", check=False)
+    if p.returncode != 0:
+        raise RuntimeError(f"git pull --rebase failed: {p.stderr[:200]}")
 
 
 def _commit(msg: str) -> bool:
