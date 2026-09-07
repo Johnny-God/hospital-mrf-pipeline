@@ -1,3 +1,5 @@
 {"event": "done", "runner": "runner-a", "ccn": "90", "ts": "2026-09-07T15:33:24.414793+00:00"}
 {"event": "done", "runner": "runner-a", "ccn": "91", "ts": "2026-09-07T16:03:24.414793+00:00"}
-{"event": "done", "runner": "runner-a", "ccn": "92", "ts": "2026-09-07T16:33:24.414793+00:00"}
+{"event": "done", "runner": "runner-a", "ccn": "92", "ts": "2026-09-07T16:33:24.414793+00:00"}{"event": "done", "runner": "identtest", "ccn": "0000", "ts": "2026-09-07T19:52:56.158946+00:00"}
+{"event": "done", "runner": "identtest", "ccn": "0001", "ts": "2026-09-07T19:52:56.158972+00:00"}
+{"event": "done", "runner": "identtest", "ccn": "0002", "ts": "2026-09-07T19:52:56.158978+00:00"}

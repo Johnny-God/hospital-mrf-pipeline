@@ -71,23 +71,26 @@
  },
  {
   "ccn": "0000",
-  "status": "claimed",
+  "status": "done",
   "claimed_by": "identtest",
   "ts": "2026-09-07T19:52:47.348214+00:00",
-  "attempts": 2
+  "attempts": 2,
+  "done_ts": "2026-09-07T19:52:56.158874+00:00"
  },
  {
   "ccn": "0001",
-  "status": "claimed",
+  "status": "done",
   "claimed_by": "identtest",
   "ts": "2026-09-07T19:52:47.348214+00:00",
-  "attempts": 2
+  "attempts": 2,
+  "done_ts": "2026-09-07T19:52:56.158889+00:00"
  },
  {
   "ccn": "0002",
-  "status": "claimed",
+  "status": "done",
   "claimed_by": "identtest",
   "ts": "2026-09-07T19:52:47.348214+00:00",
-  "attempts": 2
+  "attempts": 2,
+  "done_ts": "2026-09-07T19:52:56.158891+00:00"
  }
 ]
