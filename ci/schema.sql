@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS `rate` (
   `plan_orig` varchar(255),
   `payer_category` varchar(20),
   `standard_charge` decimal(12,2),
-  `rate_percent` decimal(8,4),
+  `rate_percent` decimal(12,4),
   `drug_unit` varchar(32),
   `drug_quantity` varchar(32),
   PRIMARY KEY (`id`),
