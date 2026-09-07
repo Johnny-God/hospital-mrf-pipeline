@@ -102,7 +102,7 @@ async def scrape_one(client: httpx.AsyncClient, loop, pool, job: dict, stats: di
         print(f"{ccn} fail {type(e).__name__}: {str(e)[:60]}", flush=True)
 
 
-async def amain(shard: int, total: int, concurrency: int):
+async def amain(shard: int, total: int, concurrency: int, max_hospitals: int = 0):
     OUT.mkdir(exist_ok=True)
     global SEMAPARSE
     SEMAPARSE = asyncio.Semaphore(4)  # max concurrent parses (RAM gate)
@@ -111,6 +111,9 @@ async def amain(shard: int, total: int, concurrency: int):
                or (OUT / f"{j['ccn']}.jsonl").stat().st_size == 0]
     print(f"shard {shard}/{total}: {len(jobs)} mine, {len(pending)} pending, "
           f"{concurrency} concurrent connections", flush=True)
+    if args.max_hospitals and len(pending) > args.max_hospitals:
+        pending = pending[:args.max_hospitals]
+        print(f"  capped to {len(pending)} this invocation (--max-hospitals)", flush=True)
     loop = asyncio.get_running_loop()
     from concurrent.futures import ThreadPoolExecutor
     pool = ThreadPoolExecutor(max_workers=6)
@@ -138,5 +141,8 @@ if __name__ == "__main__":
     ap.add_argument("--shard", type=int, required=True)
     ap.add_argument("--total", type=int, required=True)
     ap.add_argument("--concurrency", type=int, default=32)
+    ap.add_argument("--max-hospitals", type=int, default=0,
+                    help="cap pending work per invocation (0 = uncapped); "
+                         "resumable — rerun to continue the shard")
     a = ap.parse_args()
-    asyncio.run(amain(a.shard, a.total, a.concurrency))
+    asyncio.run(amain(a.shard, a.total, a.concurrency, a.max_hospitals))
