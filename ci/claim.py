@@ -35,8 +35,13 @@ def sync():
 
 
 def _commit(msg: str) -> bool:
-    """Commit queue.json; push; on race undo our commit and return False."""
-    sh("git", "add", "ci/queue.json")
+    """Commit queue + regenerated dashboard; push; on race undo and return False."""
+    sh("git", "add", "ci/queue.json", "ci/queue_history.jsonl")
+    r = subprocess.run([sys.executable, str(REPO / "ci" / "dashboard.py")],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        print(f"dashboard render failed (non-fatal): {r.stderr[:200]}")
+    sh("git", "add", "dashboard.html")
     sh("git", "commit", "-q", "-m", msg)
     p = sh("git", "push", "-q", "origin", "main", check=False)
     if p.returncode == 0:

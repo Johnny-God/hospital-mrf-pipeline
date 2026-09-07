@@ -20,7 +20,7 @@ from pathlib import Path
 REPO = Path(__file__).parent.parent
 QUEUE = REPO / "ci" / "queue.json"
 HIST = REPO / "ci" / "queue_history.jsonl"
-OUT = REPO / "dashboard.html"
+OUT = REPO / "dashboard.html"  # repo root — Pages serves it
 
 
 def parse_ts(s: str) -> datetime:
@@ -78,6 +78,7 @@ def main():
                  f"<td>{loop}</td></tr>\n")
 
     html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>Hospital Scrape Progress</title>
+<meta http-equiv="refresh" content="120">
 <style>
 body {{ background:#0d1117; color:#c9d1d9; font-family:-apple-system,Segoe UI,sans-serif; margin:2rem; }}
 h1,h2 {{ color:#58a6ff; }}
