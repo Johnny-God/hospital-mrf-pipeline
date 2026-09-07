@@ -14,11 +14,12 @@ permissions:
 
 jobs:
   preflight:
-    # Full-sweep dispatch skips it; scheduled runs always preflight.
-    if: github.event_name == 'schedule' || github.event.inputs.full != 'true'
+    # Always runs: builds ci/queue.json (done-set + change detection) that runners claim from.
     runs-on: ubuntu-latest
     outputs:
       changed: ${{ steps.count.outputs.changed }}
+    env:
+      DOLTHUB_TOKEN: ${{ secrets.DOLTHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -34,10 +35,13 @@ jobs:
           path: |
             ci/changed_ccns.json
             ci/fingerprints.new.json
+            ci/queue.json
+            ci/queue_history.jsonl
 
   matrix:
     needs: preflight
-    if: always() && !cancelled() && (needs.preflight.result == 'skipped' || needs.preflight.outputs.changed != '0')
+    # Queue-based: 50 runners always; queue handles what each one works.
+    if: always() && !cancelled() && needs.preflight.result == 'success'
     runs-on: ubuntu-latest
     outputs:
       shards: ${{ steps.gen.outputs.shards }}
@@ -45,11 +49,7 @@ jobs:
     steps:
       - id: gen
         run: |
-          if [ "${{ needs.preflight.result }}" = "skipped" ]; then
-            N="${{ github.event.inputs.total || 50 }}"
-          else
-            N=$(python3 -c "import math; c=${{ needs.preflight.outputs.changed }}; print(max(1, min(50, math.ceil(c/100))))")
-          fi
+          N="${{ github.event.inputs.total || 50 }}"
           echo "total=$N" >> "$GITHUB_OUTPUT"
           echo "shards=$(python3 -c "print(list(range($N)))")" >> "$GITHUB_OUTPUT"
 
@@ -71,12 +71,9 @@ jobs:
         with: {python-version: "3.12"}
       - run: pip install ijson requests click openpyxl pandas httpx
       - uses: actions/download-artifact@v4
-        if: needs.preflight.result == 'success'
         with: {name: preflight, path: ci}
-      - name: Full chain — scrape, convert, import, push, PR+merge
+      - name: Claim loop — scrape, bank per hospital, PR+merge
         env:
-          SHARD: ${{ matrix.shard }}
-          TOTAL: ${{ needs.matrix.outputs.total }}
           DOLT_CREDS_JWK: ${{ secrets.DOLT_CREDS_JWK }}
           DOLTHUB_TOKEN: ${{ secrets.DOLTHUB_TOKEN }}
         run: bash ci/pipeline.sh
