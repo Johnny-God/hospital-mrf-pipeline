@@ -27,7 +27,11 @@ MAX_ATTEMPTS = 3
 
 
 def sh(*args, check=True):
-    return subprocess.run(args, cwd=REPO, capture_output=True, text=True, check=check)
+    r = subprocess.run(args, cwd=REPO, capture_output=True, text=True, check=False)
+    if check and r.returncode != 0:
+        raise RuntimeError(f"git {' '.join(args[:2])} failed (exit {r.returncode}): "
+                           f"{(r.stderr or r.stdout)[:300]}")
+    return r
 
 
 def sync():

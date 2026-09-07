@@ -13,6 +13,8 @@ BRANCH="ci/queue-${RUN_ID}"
 
 echo "=== 0. dolt install check + creds ==="
 dolt version
+git config --global user.email "bot@johnnygod.dev"   # claim.py commits queue.json
+git config --global user.name "actions-ci"
 mkdir -p ~/.dolt/creds
 printf '%s' "$DOLT_CREDS_JWK" > ~/.dolt/creds/ci.jwk
 dolt config --global --add user.creds ci
