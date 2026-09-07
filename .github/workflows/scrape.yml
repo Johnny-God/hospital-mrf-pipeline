@@ -92,8 +92,9 @@ jobs:
         with: {name: preflight, path: ci}
       - run: |
           cp ci/fingerprints.new.json dim/fingerprints.json
+          python ci/dashboard.py
           git config user.name "actions-ci"
           git config user.email "bot@johnnygod.dev"
-          git add dim/fingerprints.json dim/urls/
-          git commit -m "preflight baseline + URL repairs ($(date -u +%F))" || echo "no change"
+          git add dim/fingerprints.json dim/urls/ ci/queue.json ci/queue_history.jsonl ci/dashboard.html
+          git commit -m "preflight baseline + queue + dashboard ($(date -u +%F %H:%M))" || echo "no change"
           git push

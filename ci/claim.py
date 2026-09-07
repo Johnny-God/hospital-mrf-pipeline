@@ -85,6 +85,14 @@ def cmd_claim(runner: str):
     raise SystemExit("claim: too many races, giving up")
 
 
+def _hist(event: str, runner: str, ccns: list[str]):
+    """Append an event to queue_history.jsonl (powers the dashboard loop stats)."""
+    with open(REPO / "ci" / "queue_history.jsonl", "a") as f:
+        for ccn in ccns:
+            f.write(json.dumps({"event": event, "runner": runner, "ccn": ccn,
+                                "ts": datetime.now(timezone.utc).isoformat()}) + "\n")
+
+
 def cmd_done(runner: str, ccns: list[str]):
     for _ in range(25):
         sync()
@@ -98,6 +106,7 @@ def cmd_done(runner: str, ccns: list[str]):
         if n == 0:
             print(f"done: nothing to mark for {ccns} (already handled?)")
             return
+        _hist("done", runner, [c for c in ccns])
         _save(q)
         if _commit(f"queue: {runner} done {', '.join(sorted(ccns))}"):
             return
@@ -113,6 +122,7 @@ def cmd_fail(runner: str, ccns: list[str]):
                 e["attempts"] = e.get("attempts", 1)
                 e["status"] = "failed" if e["attempts"] >= MAX_ATTEMPTS else "pending"
                 e["claimed_by"] = ""
+        _hist("fail", runner, [c for c in ccns])
         _save(q)
         if _commit(f"queue: {runner} fail {', '.join(sorted(ccns))}"):
             return
