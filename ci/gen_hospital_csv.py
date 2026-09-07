@@ -15,13 +15,19 @@ n = 0
 seen_ccn = set()  # ~13 CCNs appear in TWO state dirs; dolt PK import rejects dupes
 with open("ci/hospital.csv", "w", newline="") as fh:
     w = csv.writer(fh)
-    w.writerow(["ccn", "hospital_name", "state", "file_url", "transparency_page"])
+    w.writerow(["ccn", "hospital_name", "state", "file_url", "transparency_page",
+                "file_last_modified", "last_checked"])
     for f in sorted(glob.glob(os.path.join(REPO, "dim", "urls", "*.json"))):
         state = os.path.basename(f).replace(".json", "")
         for e in json.load(open(f)):
             if e.get("ccn") in done and e.get("ccn") not in seen_ccn:
                 seen_ccn.add(e["ccn"])
+                # freshness metadata from scrape_one.py's sidecar (optional cols)
+                meta_path = os.path.join(REPO, "data-v2", f"{e['ccn']}.meta.json")
+                meta = json.load(open(meta_path)) if os.path.exists(meta_path) else {}
                 w.writerow([e.get("ccn"), e.get("hospital_name"), state,
-                            e.get("file_url"), e.get("transparency_page")])
+                            e.get("file_url"), e.get("transparency_page"),
+                            meta.get("file_last_modified", ""),
+                            meta.get("last_checked", "")])
                 n += 1
 print(f"DONE: {n} hospital rows ({len(done) - n} dupes skipped)")

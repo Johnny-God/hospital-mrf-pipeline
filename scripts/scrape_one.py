@@ -9,6 +9,7 @@ import json
 import sys
 import tempfile
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
@@ -68,9 +69,17 @@ def main():
         with open(OUT / f"{ccn}.jsonl", "w") as fh:
             for row in rows:
                 fh.write(json.dumps(row) + "\n")
+        # freshness metadata sidecar: file_last_modified straight from the
+        # hospital's server headers, last_checked = our scrape time (UTC)
+        meta = {
+            "file_last_modified": r.headers.get("last-modified", ""),
+            "last_checked": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
+        (OUT / f"{ccn}.meta.json").write_text(json.dumps(meta))
         print(f"{ccn} ok {len(rows):,} {time.time() - t0:.0f}s")
     except Exception as e:
         Path(OUT / f"{ccn}.jsonl").unlink(missing_ok=True)
+        Path(OUT / f"{ccn}.meta.json").unlink(missing_ok=True)
         print(f"{ccn} fail {type(e).__name__}: {str(e)[:80]}")
         sys.exit(1)
 

@@ -51,7 +51,7 @@ while :; do
     rm -f /tmp/dolt-import/rate_v2.csv
     python "$REPO/scripts/v2_to_dolt_csv.py" "$OUT"
     (cd "$REPO" && python ci/gen_hospital_csv.py "$OUT")
-    dolt table import -a --columns "ccn,hospital_name,state,file_url,transparency_page" hospital "$REPO/ci/hospital.csv" || true
+    dolt table import -a --columns "ccn,hospital_name,state,file_url,transparency_page,file_last_modified,last_checked" hospital "$REPO/ci/hospital.csv" || true
     dolt table import -a --columns "id,ccn,code,code_prefix,code_orig,modifier,ndc,apc,rev_code,internal_code,billing_class,patient_class,payer_orig,plan_orig,payer_category,standard_charge,rate_percent,drug_unit,drug_quantity" rate /tmp/dolt-import/rate_v2.csv
     dolt add -A
     dolt commit -m "shard hospital $CCN"
