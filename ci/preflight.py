@@ -40,6 +40,47 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from fix_broken_urls import scrape_transparency_page, validate_url  # noqa: E402
 
 
+DB = "johnnygod/hospital-prices"
+
+
+def get_done_set() -> set[str]:
+    """CCNs already in DoltHub main's hospital table (keyset-paginated on the PK).
+
+    v1alpha1 SQL has no usable pagination contract, but ccn is the PK so
+    `WHERE ccn > last ORDER BY ccn LIMIT 500` is a cheap index walk.
+    Returns empty set on any failure (fail-open = full sweep).
+    """
+    import os
+    import urllib.request
+
+    token = os.environ.get("DOLTHUB_TOKEN")
+    if not token:
+        print("  DOLTHUB_TOKEN unset — cannot read done-set, running full sweep")
+        return set()
+    done: set[str] = set()
+    last = ""
+    base = f"https://www.dolthub.com/api/v1alpha1/{DB}/main"
+    try:
+        while True:
+            q = urllib.parse.quote(
+                f"SELECT ccn FROM hospital WHERE ccn > '{last}' ORDER BY ccn LIMIT 500")
+            req = urllib.request.Request(f"{base}?q={q}",
+                                         headers={"authorization": f"token {token}"})
+            with urllib.request.urlopen(req, timeout=60) as r:
+                rows = json.load(r).get("rows", [])
+            if not rows:
+                break
+            done.update(r_["ccn"] for r_ in rows)
+            last = max(r_["ccn"] for r_ in rows)
+            if len(rows) < 500:
+                break
+        print(f"  done-set from DoltHub main: {len(done)} hospitals already imported")
+    except Exception as e:
+        print(f"  done-set fetch failed ({e}) — fail-open to full sweep")
+        return set()
+    return done
+
+
 def load_hospitals():
     seen, out = set(), []
     for f in sorted(ROOT.glob("dim/urls/*.json")):
@@ -151,6 +192,10 @@ def repair_dead(dead_jobs: list[dict], url_paths: dict[str, Path], results: dict
 async def main(concurrency: int):
     hospitals = load_hospitals()
     baseline = json.load(open(BASELINE)) if BASELINE.exists() else {}
+    done = get_done_set()  # CCNs already imported to main: skip entirely
+    todo = [h for h in hospitals if h["ccn"] not in done]
+    print(f"  {len(todo)} hospitals not yet in DoltHub main", flush=True)
+    hospitals = todo
     results, sem = {}, asyncio.Semaphore(concurrency)
     t0 = time.time()
     timeout = httpx.Timeout(30.0, connect=10.0)
