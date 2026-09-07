@@ -1,7 +1,7 @@
 CREATE TABLE `rate` (
   `id` bigint NOT NULL,
   `ccn` varchar(10) NOT NULL,
-  `code` varchar(64),
+  `code` varchar(512),
   `code_prefix` varchar(32),
   `code_orig` varchar(255),
   `modifier` varchar(64),

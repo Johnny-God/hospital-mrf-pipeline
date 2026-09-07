@@ -30,4 +30,4 @@ with open("ci/hospital.csv", "w", newline="") as fh:
                             meta.get("file_last_modified", ""),
                             meta.get("last_checked", "")])
                 n += 1
-print(f"DONE: {n} hospital rows ({len(done) - n} dupes skipped)")
+print(f"DONE: {n} hospital rows")

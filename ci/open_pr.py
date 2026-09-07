@@ -50,12 +50,15 @@ pr = api("pulls", {
 })
 if pr.get("status") != "Success":
     print("PR CREATE FAILED:", json.dumps(pr)[:400])
-    sys.exit(1)
+    sys.exit(1)  # branch is pushed; salvage via merge.yml later
 pull = pr["pull_id"]
 print(f"PR #{pull} created")
 
 op = api(f"pulls/{pull}/merge", method="POST")  # no body needed
 operation = op.get("operation_name")
+if not operation:
+    print("MERGE DISPATCH FAILED:", json.dumps(op)[:400])
+    sys.exit(1)  # PR is open; salvage via merge.yml later
 print(f"merge started: {operation}")
 
 for i in range(120):  # up to 40 min
