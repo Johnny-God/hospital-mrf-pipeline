@@ -1,1 +1,93 @@
-[{"ccn": "0000", "status": "done", "claimed_by": "", "ts": "", "attempts": 0}, {"ccn": "0001", "status": "done", "claimed_by": "", "ts": "", "attempts": 0}, {"ccn": "0002", "status": "done", "claimed_by": "", "ts": "", "attempts": 0}, {"ccn": "0003", "status": "done", "claimed_by": "", "ts": "", "attempts": 0}, {"ccn": "0004", "status": "done", "claimed_by": "", "ts": "", "attempts": 0}, {"ccn": "0005", "status": "done", "claimed_by": "", "ts": "", "attempts": 0}, {"ccn": "0006", "status": "done", "claimed_by": "", "ts": "", "attempts": 0}, {"ccn": "0007", "status": "done", "claimed_by": "", "ts": "", "attempts": 0}, {"ccn": "0008", "status": "done", "claimed_by": "", "ts": "", "attempts": 0}, {"ccn": "1000", "status": "claimed", "claimed_by": "runner-a", "ts": "2026-09-07T17:03:24.414615+00:00", "attempts": 1}, {"ccn": "0000", "status": "pending", "claimed_by": "", "ts": "", "attempts": 0}, {"ccn": "0001", "status": "pending", "claimed_by": "", "ts": "", "attempts": 0}, {"ccn": "0002", "status": "pending", "claimed_by": "", "ts": "", "attempts": 0}]
+[
+ {
+  "ccn": "0000",
+  "status": "done",
+  "claimed_by": "",
+  "ts": "",
+  "attempts": 0
+ },
+ {
+  "ccn": "0001",
+  "status": "done",
+  "claimed_by": "",
+  "ts": "",
+  "attempts": 0
+ },
+ {
+  "ccn": "0002",
+  "status": "done",
+  "claimed_by": "",
+  "ts": "",
+  "attempts": 0
+ },
+ {
+  "ccn": "0003",
+  "status": "done",
+  "claimed_by": "",
+  "ts": "",
+  "attempts": 0
+ },
+ {
+  "ccn": "0004",
+  "status": "done",
+  "claimed_by": "",
+  "ts": "",
+  "attempts": 0
+ },
+ {
+  "ccn": "0005",
+  "status": "done",
+  "claimed_by": "",
+  "ts": "",
+  "attempts": 0
+ },
+ {
+  "ccn": "0006",
+  "status": "done",
+  "claimed_by": "",
+  "ts": "",
+  "attempts": 0
+ },
+ {
+  "ccn": "0007",
+  "status": "done",
+  "claimed_by": "",
+  "ts": "",
+  "attempts": 0
+ },
+ {
+  "ccn": "0008",
+  "status": "done",
+  "claimed_by": "",
+  "ts": "",
+  "attempts": 0
+ },
+ {
+  "ccn": "1000",
+  "status": "claimed",
+  "claimed_by": "testrunner",
+  "ts": "2026-09-07T17:51:22.412957+00:00",
+  "attempts": 2
+ },
+ {
+  "ccn": "0000",
+  "status": "claimed",
+  "claimed_by": "testrunner",
+  "ts": "2026-09-07T17:51:22.412957+00:00",
+  "attempts": 1
+ },
+ {
+  "ccn": "0001",
+  "status": "claimed",
+  "claimed_by": "testrunner",
+  "ts": "2026-09-07T17:51:22.412957+00:00",
+  "attempts": 1
+ },
+ {
+  "ccn": "0002",
+  "status": "claimed",
+  "claimed_by": "testrunner",
+  "ts": "2026-09-07T17:51:22.412957+00:00",
+  "attempts": 1
+ }
+]
