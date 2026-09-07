@@ -1,0 +1,15 @@
+name: dolt-merge-open-prs
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - env:
+          DOLTHUB_TOKEN: ${{ secrets.DOLTHUB_TOKEN }}
+        run: python ci/merge_prs.py
