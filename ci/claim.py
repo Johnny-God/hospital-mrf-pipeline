@@ -46,7 +46,9 @@ def sync():
 
 def _commit(msg: str) -> bool:
     """Commit queue + regenerated dashboard; push; on race undo and return False."""
-    sh("git", "add", "ci/queue.json", "ci/queue_history.jsonl")
+    sh("git", "add", "ci/queue.json")
+    if (REPO / "ci" / "queue_history.jsonl").exists():
+        sh("git", "add", "ci/queue_history.jsonl")
     r = subprocess.run([sys.executable, str(REPO / "ci" / "dashboard.py")],
                        capture_output=True, text=True)
     if r.returncode != 0:
