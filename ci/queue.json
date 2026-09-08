@@ -3196,38 +3196,43 @@
  },
  {
   "ccn": "050350",
-  "status": "claimed",
+  "status": "done",
   "claimed_by": "runner-20260908-110041-20167",
   "ts": "2026-09-08T11:17:38.880395+00:00",
-  "attempts": 1
+  "attempts": 1,
+  "done_ts": "2026-09-08T11:35:49.615819+00:00"
  },
  {
   "ccn": "050351",
-  "status": "claimed",
+  "status": "done",
   "claimed_by": "runner-20260908-110041-20167",
   "ts": "2026-09-08T11:17:38.880395+00:00",
-  "attempts": 1
+  "attempts": 1,
+  "done_ts": "2026-09-08T11:35:49.615832+00:00"
  },
  {
   "ccn": "050352",
-  "status": "claimed",
+  "status": "done",
   "claimed_by": "runner-20260908-110041-20167",
   "ts": "2026-09-08T11:17:38.880395+00:00",
-  "attempts": 1
+  "attempts": 1,
+  "done_ts": "2026-09-08T11:35:49.615835+00:00"
  },
  {
   "ccn": "050357",
-  "status": "claimed",
+  "status": "done",
   "claimed_by": "runner-20260908-110041-20167",
   "ts": "2026-09-08T11:17:38.880395+00:00",
-  "attempts": 1
+  "attempts": 1,
+  "done_ts": "2026-09-08T11:35:49.615837+00:00"
  },
  {
   "ccn": "050360",
-  "status": "claimed",
+  "status": "done",
   "claimed_by": "runner-20260908-110041-20167",
   "ts": "2026-09-08T11:17:38.880395+00:00",
-  "attempts": 1
+  "attempts": 1,
+  "done_ts": "2026-09-08T11:35:49.615838+00:00"
  },
  {
   "ccn": "050367",
