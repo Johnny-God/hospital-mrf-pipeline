@@ -222,9 +222,9 @@ def mods_filter(mods):
 
 
 def stream_v2(url: str, timeout: int = 180):
-    """Stream a JSON MRF, yield full-schema rows. Reuses payer_pilot temp-file pattern."""
-    resp = requests.get(url, timeout=timeout, stream=True, headers={"User-Agent": "Mozilla/5.0"})
-    resp.raise_for_status()
+    """Stream a JSON MRF, yield full-schema rows (temp-file pattern)."""
+    from httpfetch import get_stream
+    resp = get_stream(url, timeout=timeout)
     import tempfile
     with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tf:
         for chunk in resp.iter_content(1 << 20):
