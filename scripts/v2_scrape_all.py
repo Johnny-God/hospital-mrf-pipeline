@@ -23,7 +23,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import click
-import pandas as pd
 import requests
 
 PROJECT = Path(__file__).parent.parent
@@ -76,50 +75,63 @@ def save_freshness(db: dict):
     FRESHNESS_DB.write_text(json.dumps(db, indent=1))
 
 
-def _raw_to_rows(fmt: str, raw: bytes, ccn: str, raw_path: Path | None = None) -> list[dict]:
-    """Parse non-JSON formats with v1 scrapers, then re-extract to v2 schema."""
+def _raw_to_rows(fmt: str, raw: bytes, ccn: str, raw_path: Path | None = None):
+    """Parse any format -> generator of v2-schema rows (streamed, constant RAM).
+    zip path materializes only the inner file listing; inner members re-yield
+    via recursion. Callers must iterate (write rows as they come)."""
     import tempfile
     if fmt == "zip":
         import zipfile
         with tempfile.TemporaryDirectory() as td:
             zp = Path(td) / f"{ccn}.zip"
             zp.write_bytes(raw)
-            rows = []
             try:
                 with zipfile.ZipFile(zp) as z:
                     for name in z.namelist():
-                        inner = z.read(name)
                         il = name.lower()
                         sub = "json" if il.endswith(".json") else "csv" if il.endswith(".csv") else "xlsx" if il.endswith((".xlsx", ".xls")) else None
                         if sub:
-                            rows.extend(_raw_to_rows(sub, inner, ccn))
+                            yield from _raw_to_rows(sub, z.read(name), ccn)
             except zipfile.BadZipFile:
                 pass
-            return rows
+            return
     if fmt == "json":
-        # small json files: parse directly
+        # path mode (zero giant-RAM copies): ijson streams from disk
+        if raw_path is not None:
+            import ijson
+            from scrape_v2 import CHARGE_PATHS, extract_rows
+            for path in ["item", *CHARGE_PATHS]:
+                with open(raw_path, "rb") as f:
+                    try:
+                        probe = next(ijson.items(f, path), None)
+                    except ijson.JSONError:
+                        probe = None
+                if probe is None:
+                    continue
+                with open(raw_path, "rb") as f:
+                    for it in ijson.items(f, path):
+                        if isinstance(it, dict):
+                            yield from extract_rows(it)
+                return
+            return
+        # small in-memory json: parse directly
         try:
             data = json.loads(raw.decode("utf-8", errors="replace"))
         except json.JSONDecodeError:
-            return []
+            return
         from scrape_v2 import extract_rows
         items = data if isinstance(data, list) else _walk_items(data)
-        rows = []
         for it in items:
             if isinstance(it, dict):
-                rows.extend(extract_rows(it))
-        return rows
-    # CSV / XLSX — streamed, not materialized
-    # ponytail: pandas read_excel/read_csv materialize whole files (multi-GB RAM);
-    # openpyxl read_only + csv.reader stream instead. Called via generator below.
+                yield from extract_rows(it)
+        return
+    # CSV / XLSX — streamed end to end (openpyxl read_only + csv.reader)
     if fmt == "xlsx":
         gen = _xlsx_rows(raw)
     else:
         gen = _csv_rows(raw, path=raw_path)
-    rows = []
     for d in gen:
-        rows.extend(extract_rows_csv(d))
-    return rows
+        yield from extract_rows_csv(d)
 
 
 def _xlsx_rows(raw: bytes):
@@ -233,13 +245,12 @@ def scrape_one(job: dict, max_age_days: int, freshness: dict) -> dict:
             rows = _raw_to_rows(fmt, local.read_bytes(), ccn)
             src = "local_file"
         elif fmt == "json":
-            rows, src = list(stream_v2(url)), "url"
+            rows, src = stream_v2(url), "url"
         else:
             # ponytail: stream to disk, never resp.content (multi-GB files OOM'd 3 workers)
             import tempfile
-            resp = requests.get(url, timeout=180, stream=True,
-                                headers={"User-Agent": "Mozilla/5.0"})
-            resp.raise_for_status()
+            from httpfetch import get_stream
+            resp = get_stream(url)
             ext = ".zip" if fmt == "zip" else ".xlsx" if fmt == "xlsx" else ".csv"
             tmpdl = tempfile.NamedTemporaryFile(suffix=ext, delete=False)
             for chunk in resp.iter_content(1 << 20):
@@ -247,12 +258,14 @@ def scrape_one(job: dict, max_age_days: int, freshness: dict) -> dict:
             tmpdl.close()
             # path mode: never hold the file in RAM
             rows, src = _raw_to_rows(fmt, b"", ccn, raw_path=Path(tmpdl.name)), "url"
+        n = 0
         with open(out, "w") as fh:
             for r in rows:
                 fh.write(json.dumps(r) + "\n")
+                n += 1
         if tmpdl:
             Path(tmpdl.name).unlink(missing_ok=True)
-        return {"ccn": ccn, "status": "ok", "rows": len(rows), "src": src,
+        return {"ccn": ccn, "status": "ok", "rows": n, "src": src,
                 "secs": round(time.time() - t0, 1)}
     except Exception as e:
         out.unlink(missing_ok=True)
@@ -352,8 +365,31 @@ def main(workers, formats, max_age_days, validate_cpt, limit, batch_size):
     t0 = time.time()
     for p in procs:
         p.start()
-    for p in procs:
-        p.join()
+    # Per-hospital hangs blocked the whole batch before (76-min stall observed):
+    # workers pull from a shared atomic queue, so terminating a process that
+    # stops making progress is safe — its unfinished hospitals are re-runnable
+    # via the resume/skip machinery on the next run.
+    # ponytail: no per-worker heartbeat — a batch where NO worker completes a
+    # hospital for 15 min gets killed wholesale; a single >15-min legit parse
+    # (biggest MRFs) triggers it. Next run resumes via skip machinery.
+    HANG_SECS = 900
+    last_progress = 0
+    stuck = []
+    while any(p.is_alive() for p in procs):
+        for p in procs:
+            p.join(timeout=60)
+        progress = len(status_list)
+        if progress == last_progress and time.time() - t0 > HANG_SECS:
+            for p in procs:
+                if p.is_alive():
+                    stuck.append(p.pid)
+                    p.terminate()
+            time.sleep(5)
+            for p in procs:
+                if p.is_alive():
+                    p.kill()
+            break
+        last_progress = progress
     # write status + freshness
     recs = list(status_list)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
@@ -365,8 +401,24 @@ def main(workers, formats, max_age_days, validate_cpt, limit, batch_size):
     ok = sum(1 for r in recs if r["status"] == "ok")
     fail = sum(1 for r in recs if r["status"] == "fail")
     skip = len(recs) - ok - fail
-    print(f"V2_ALL_DONE: {ok} ok / {fail} fail / {skip} skipped in {(time.time()-t0)/60:.0f} min",
-          flush=True)
+    summary = f"V2_ALL_DONE: {ok} ok / {fail} fail / {skip} skipped in {(time.time()-t0)/60:.0f} min"
+    if stuck:
+        summary += f" (STUCK WORKERS TERMINATED: {stuck})"
+    print(summary, flush=True)
+    _alert(summary)
+
+
+def _alert(msg: str):
+    """One POST to ALERT_WEBHOOK_URL (if set) — the only failure signal this
+    pipeline has had since day one was 'data stopped appearing'."""
+    import os
+    url = os.environ.get("ALERT_WEBHOOK_URL")
+    if not url:
+        return
+    try:
+        requests.post(url, json={"content": msg}, timeout=10)
+    except Exception as e:
+        print(f"alert failed: {type(e).__name__}: {e}", flush=True)
 
 
 if __name__ == "__main__":
