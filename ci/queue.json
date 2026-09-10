@@ -4461,38 +4461,38 @@
  },
  {
   "ccn": "100086",
-  "status": "pending",
-  "claimed_by": "runner-20260910-110200-3330",
-  "ts": "2026-09-10T13:13:29.740476+00:00",
-  "attempts": 23
+  "status": "claimed",
+  "claimed_by": "runner-20260910-110046-26905",
+  "ts": "2026-09-10T14:23:14.556532+00:00",
+  "attempts": 24
  },
  {
   "ccn": "100087",
-  "status": "pending",
-  "claimed_by": "runner-20260910-110200-3330",
-  "ts": "2026-09-10T13:13:29.740476+00:00",
-  "attempts": 23
+  "status": "claimed",
+  "claimed_by": "runner-20260910-110046-26905",
+  "ts": "2026-09-10T14:23:14.556532+00:00",
+  "attempts": 24
  },
  {
   "ccn": "100088",
-  "status": "pending",
-  "claimed_by": "runner-20260910-110200-3330",
-  "ts": "2026-09-10T13:13:29.740476+00:00",
-  "attempts": 23
+  "status": "claimed",
+  "claimed_by": "runner-20260910-110046-26905",
+  "ts": "2026-09-10T14:23:14.556532+00:00",
+  "attempts": 24
  },
  {
   "ccn": "100090",
-  "status": "pending",
-  "claimed_by": "runner-20260910-110200-3330",
-  "ts": "2026-09-10T13:13:29.740476+00:00",
-  "attempts": 5
+  "status": "claimed",
+  "claimed_by": "runner-20260910-110046-26905",
+  "ts": "2026-09-10T14:23:14.556532+00:00",
+  "attempts": 6
  },
  {
   "ccn": "100093",
-  "status": "pending",
-  "claimed_by": "runner-20260910-110200-3330",
-  "ts": "2026-09-10T13:13:29.740476+00:00",
-  "attempts": 5
+  "status": "claimed",
+  "claimed_by": "runner-20260910-110046-26905",
+  "ts": "2026-09-10T14:23:14.556532+00:00",
+  "attempts": 6
  },
  {
   "ccn": "100105",
@@ -9656,35 +9656,35 @@
  },
  {
   "ccn": "150125",
-  "status": "claimed",
+  "status": "pending",
   "claimed_by": "runner-20260910-123410-13905",
   "ts": "2026-09-10T13:27:24.679319+00:00",
   "attempts": 6
  },
  {
   "ccn": "150128",
-  "status": "claimed",
+  "status": "pending",
   "claimed_by": "runner-20260910-123410-13905",
   "ts": "2026-09-10T13:27:24.679319+00:00",
   "attempts": 5
  },
  {
   "ccn": "150132",
-  "status": "claimed",
+  "status": "pending",
   "claimed_by": "runner-20260910-123410-13905",
   "ts": "2026-09-10T13:27:24.679319+00:00",
   "attempts": 5
  },
  {
   "ccn": "150133",
-  "status": "claimed",
+  "status": "pending",
   "claimed_by": "runner-20260910-123410-13905",
   "ts": "2026-09-10T13:27:24.679319+00:00",
   "attempts": 5
  },
  {
   "ccn": "150136",
-  "status": "claimed",
+  "status": "pending",
   "claimed_by": "runner-20260910-123410-13905",
   "ts": "2026-09-10T13:27:24.679319+00:00",
   "attempts": 5
